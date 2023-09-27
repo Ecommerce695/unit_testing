@@ -1,8 +1,9 @@
 from django.test import TestCase,Client
-from customer.models import UserProfile,Role,UserRole,Account_Activation,KnoxAuthtoken,Reset_Password
+from customer.models import UserProfile,Role,UserRole,Account_Activation,KnoxAuthtoken,Reset_Password,UserAddress,AddressType
 from customer.serializers import LoginSerializer
 from django.utils import timezone
 from unittest import skip,skipIf
+from rest_framework.reverse import reverse
 from django.core import mail
 from knox.auth import AuthToken
 from smtplib import SMTPException
@@ -14,6 +15,8 @@ class test_details_updation(TestCase):
     def setUp(self):
         self.client = Client()
         Role.objects.create(role_id=1,role='USER',role_desc="NULL")
+        AddressType.objects.create(type = "HOME",description  ="7AM-10Pm")
+        AddressType.objects.create(type = "OFFICIAL",description  ="10AM-5Pm")
         self.data = {
             "username":"dharani",
             "password": "Kumar@143",
@@ -22,6 +25,21 @@ class test_details_updation(TestCase):
             "last_name": "kumar",
             "mobile_number":"6303049533"
         }
+
+        self.Address_data = {
+            "type":"HOME",
+            "name":"Dharani_kumar",
+            "mobile" : "6303049533",
+            "address":"1-1-1/1",
+            "landmark":"Tall Building",
+            "area":"Nice Area",
+            "city":"Visakhapatnam",
+            "state":"Andhra Pradesh",
+            "country" : "IN",
+            "pincode":"530012",
+            "is_default" : "TRUE"
+        }
+
         signup_response = self.client.post('/signup/',self.data)
         otp = signup_response.context['Gotp']
         unique_id = signup_response.context['unique_id']
@@ -209,3 +227,47 @@ class test_details_updation(TestCase):
         self.assertEqual(bytes_data.get('message'),"There was an error with your Password combination")
 
 
+    def test_add_address(self):
+        # add address
+        address_table_count = UserAddress.objects.all()
+        self.assertEqual(address_table_count.count(),0)
+        user_address_url = f'/useraddress/{self.token_key}'
+        user_address_responce = self.client.post(user_address_url,self.Address_data,content_type="application/json")
+        self.assertEqual(user_address_responce.status_code,200)
+        address_table_count = UserAddress.objects.all()
+        self.assertEqual(address_table_count.count(),1)
+        
+        # view address
+        user_address_view_responce = self.client.get(user_address_url)
+        bytes_data_user = json.loads(user_address_view_responce.content.decode('utf-8'))
+        self.assertEqual(bytes_data_user,[{'id': 1, 'type_id': 'HOME', 'user_id': 1, 'name': 'Dharani_kumar', 'mobile': 6303049533, 'address': '1-1-1/1', 'landmark': 'Tall Building', 'area': 'Nice Area', 'city': 'Visakhapatnam', 'state': 'Andhra Pradesh', 'country': 'INDIA', 'pincode': 530012, 'is_default': True, 'is_active': True}])
+        
+        # delete address
+        user_address_delete_responce = self.client.delete(user_address_url)
+        self.assertEqual(user_address_view_responce.status_code,200)
+
+
+    def test_update_address(self):
+        Address_data = {
+            "type":"HOME",
+            "name":"Dharani_kumar",
+            "mobile" : "6303049533",
+            "address":"1-1-1/1",
+            "landmark":"short Building",
+            "area":"Nice Area",
+            "city":"Visakhapatnam",
+            "state":"Andhra Pradesh",
+            "country" : "IN",
+            "pincode":"530012",
+            "is_default" : "TRUE"
+        }
+
+        address_table_count = UserAddress.objects.all()
+        self.assertEqual(address_table_count.count(),0)
+        user_address_url = f'/useraddress/{self.token_key}'
+        user_address_responce = self.client.post(user_address_url,Address_data,content_type="application/json")
+        self.assertEqual(user_address_responce.status_code,200)
+        address_table_count = UserAddress.objects.all()
+        self.assertEqual(address_table_count.count(),1)
+        user_address_data = UserAddress.objects.filter(id=1).first()        
+        self.assertEqual(user_address_data.landmark,'short Building')

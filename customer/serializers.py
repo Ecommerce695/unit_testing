@@ -1,5 +1,5 @@
 from rest_framework import serializers,validators
-from customer.models import UserProfile
+from customer.models import UserProfile,UserAddress
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -117,3 +117,26 @@ class UpdatePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField()
     new_password = serializers.CharField()
     confirm_password = serializers.CharField()
+
+
+class UserAddressSerializer(serializers.Serializer):
+    type = serializers.CharField()
+    name = serializers.CharField()
+    mobile = serializers.IntegerField()
+    address = serializers.CharField()
+    landmark = serializers.CharField()
+    area = serializers.CharField()
+    city = serializers.CharField()
+    state = serializers.CharField()
+    country = serializers.CharField()
+    pincode = serializers.IntegerField()
+    is_default = serializers.BooleanField()
+
+class UpdateAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserAddress
+        fields = ('type','name','mobile','address','landmark','area','city','state','country','pincode','is_default')
+        extra_kwargs = {
+            "is_default" : {"required" : False}
+            }
+

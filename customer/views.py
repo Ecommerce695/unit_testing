@@ -1,10 +1,10 @@
 from rest_framework import views
 from rest_framework.views import APIView
 from django.db import transaction
-from customer.models import UserProfile,Role,UserRole,Account_Activation,KnoxAuthtoken,Reset_Password
+from customer.models import UserProfile,Role,UserRole,Account_Activation,KnoxAuthtoken,Reset_Password,UserAddress,AddressType
 from customer.serializers import (RegisterSerializer,ActivateAccountSerializer,LoginSerializer,ResetActivationSerializer,UserUpdateSerializer,
                                   Useremailserializer,Userotpactivateserializer,Usermobileserializer,UsernameSerializer,ForgetPasswordSerializer,ConfirmPasswordSerializer,UpdatePasswordSerializer,
-                                  )
+                                  UserAddressSerializer,UpdateAddressSerializer)
 from rest_framework.response import Response
 from rest_framework import status
 from django_user_agents.utils import get_user_agent
@@ -676,4 +676,327 @@ class UpdatePasswordAPI(CreateAPIView):
                         return Response({"message":"Incorrect Current Password"}, status=status.HTTP_406_NOT_ACCEPTABLE)
                 else:
                     return Response({"message":"Missing Field Values"}, status=status.HTTP_204_NO_CONTENT)
+
+##########  User address   #########
+class AddressView(CreateAPIView):
+    serializer_class = UserAddressSerializer
+
+    @transaction.atomic
+    def post(self, request,token, *args, **kwargs):
+        try:
+            token1 = KnoxAuthtoken.objects.get(token_key=token)
+        except:
+            data = {"message" : "Invalid Access Token"}
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+        user = token1.user_id
+        usertable = UserProfile.objects.get(id=user)
+        userdata = usertable.id
+        role = Role.objects.get(role='USER')
+        role1 = role.role_id
+        roles = UserRole.objects.filter(role_id=role1, user_id=userdata)
+        if(UserProfile.objects.filter(id=userdata, is_active='True')):
+            if roles.exists():
+                if token1.expiry < datetime.now(utc):
+                    KnoxAuthtoken.objects.filter(user=user).delete()
+                    data = {"message":'Session Expired, Please login again'}
+                    return Response(data, status=status.HTTP_408_REQUEST_TIMEOUT)
+                else:
+                    serializer = self.get_serializer(data=request.data)
+                    if serializer.is_valid(raise_exception=True):
+                        serializerdata = serializer.validated_data['mobile']
+                        serializertype = serializer.validated_data['type']
+                        serializername= serializer.validated_data['name']
+                        serializeraddress = serializer.validated_data['address']
+                        serializernearby = serializer.validated_data['landmark']
+                        serializerstreetno = serializer.validated_data['area']
+                        serializercity = serializer.validated_data['city']
+                        serializerstate= serializer.validated_data['state']
+                        serializercountry = serializer.validated_data['country']
+                        serializerpostalcode = serializer.validated_data['pincode']
+                        serializerdefault = serializer.validated_data['is_default']
+
+                        if(serializercountry=='in' or serializercountry=='India' or serializercountry=='INDIA' or serializercountry=='india' or serializercountry=='IN'):                
+                            if(AddressType.objects.filter(type__iexact=serializertype).exists()):
+                                a1 = AddressType.objects.get(type=serializertype.upper())
+                                if UserAddress.objects.filter(user=usertable).exists():
+                                    if serializerdefault ==True:
+                                        UserAddress.objects.filter(user=usertable,is_default=True).update(is_default=False)
+                                        table = UserAddress.objects.create(name=serializername, user=usertable, type=a1,
+                                        mobile=serializerdata, address=serializeraddress, landmark=serializernearby, area=serializerstreetno,
+                                        city=serializercity, state=serializerstate, country='INDIA', pincode=serializerpostalcode, is_default=serializerdefault)
+                                        table.save()
+                                        return Response({"message":"Address added Successfully"},status=status.HTTP_200_OK)
+                                    else:
+                                        table = UserAddress.objects.create(name=serializername, user=usertable, type=a1,
+                                        mobile=serializerdata, address=serializeraddress, landmark=serializernearby, area=serializerstreetno,
+                                        city=serializercity, state=serializerstate, country='INDIA', pincode=serializerpostalcode, is_default=serializerdefault)
+                                        table.save()
+                                        return Response({"message":"Address added Successfully"},status=status.HTTP_200_OK)
+                                else:
+                                    UserAddress.objects.create(name=serializername, user=usertable, type=a1,
+                                    mobile=serializerdata, address=serializeraddress, landmark=serializernearby, area=serializerstreetno,
+                                    city=serializercity, state=serializerstate, country='INDIA', pincode=serializerpostalcode, is_default=True)
+                                return Response({"message" : "Address added Successfully"},status=status.HTTP_200_OK)
+                            else:
+                                return Response({"message":"Address type not found"}, status=status.HTTP_404_NOT_FOUND)
+                        elif(serializercountry=='US' or serializercountry=='UNITED STATES' or serializercountry=='United States' or serializercountry=='united states' or serializercountry=='us'):
+                            if(AddressType.objects.filter(type__iexact=serializertype).exists()):
+                                a1 = AddressType.objects.get(type=serializertype.upper())
+                                if UserAddress.objects.filter(user=usertable).exists():
+                                    if serializerdefault ==True:
+                                        UserAddress.objects.filter(user=usertable,is_default=True).update(is_default=False)
+                                        table = UserAddress.objects.create(name=serializername, user=usertable, type=a1,
+                                        mobile=serializerdata, address=serializeraddress, landmark=serializernearby, area=serializerstreetno,
+                                        city=serializercity, state=serializerstate, country='UNITED STATES', pincode=serializerpostalcode, is_default=serializerdefault)
+                                        table.save()
+                                        return Response({"message":"Address added Successfully"},status=status.HTTP_200_OK)
+                                    else:
+                                        table = UserAddress.objects.create(name=serializername, user=usertable, type=a1,
+                                        mobile=serializerdata, address=serializeraddress, landmark=serializernearby, area=serializerstreetno,
+                                        city=serializercity, state=serializerstate, country='UNITED STATES', pincode=serializerpostalcode, is_default=serializerdefault)
+                                        table.save()
+                                        return Response({"message":"Address added Successfully"},status=status.HTTP_200_OK)
+                                else:
+                                    UserAddress.objects.create(name=serializername, user=usertable, type=a1,
+                                    mobile=serializerdata, address=serializeraddress, landmark=serializernearby, area=serializerstreetno,
+                                    city=serializercity, state=serializerstate, country='UNITED STATES', pincode=serializerpostalcode, is_default=True)
+                                return Response({"message" : "Address added Successfully"},status=status.HTTP_200_OK)
+                            else:
+                                return Response({"message":"Address type not found"}, status=status.HTTP_404_NOT_FOUND)
+                        else:
+                            return Response({"message":"Country not allowed to add"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                    else:
+                        return Response({"message" : "Serializer not valid"},status=status.HTTP_400_BAD_REQUEST)
+            else:
+                data ={
+                "warning" : "User not assigned to Role, can't add Address",
+                "message" : "Activate your account"
+                }
+                return Response(data, status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            data = {"message":'User is in In-Active, please Activate your account'}
+            return Response(data, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+
+    # @transaction.atomic
+    # def put(self, request, token):
+    #     try:
+    #         token1 = KnoxAuthtoken.objects.get(token_key=token)
+    #     except:
+    #         data = {"message" : "Invalid Access Token"}
+    #         return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+    #     user = token1.user_id
+    #     usertable = UserProfile.objects.get(id=user)
+    #     userdata = usertable.id
+    #     role = Role.objects.get(role='USER')
+    #     role1 = role.role_id
+    #     roles = UserRole.objects.filter(role_id=role1, user_id=userdata)
+    #     if(UserProfile.objects.filter(id=userdata, is_active='True')):
+    #         if roles.exists():
+    #             if token1.expiry < datetime.now(utc):
+    #                 KnoxAuthtoken.objects.filter(user=user).delete()
+    #                 data = {"message":"Session Expired, Please login again"}
+    #                 return Response(data, status=status.HTTP_408_REQUEST_TIMEOUT)
+    #             else:                 
+    #                 serializer = self.get_serializer(usertable, data = request.data)
+    #                 if serializer.is_valid():
+    #                     name = serializer.validated_data['name']
+    #                     type1 = serializer.validated_data['type']
+    #                     mobile = serializer.validated_data['mobile']
+    #                     address = serializer.validated_data['address']
+    #                     nearby = serializer.validated_data['landmark']
+    #                     streetno = serializer.validated_data['area']
+    #                     city = serializer.validated_data['city']
+    #                     state = serializer.validated_data['state']
+    #                     country = serializer.validated_data['country']
+    #                     pincode = serializer.validated_data['pincode']
+
+    #                     if(UserAddress.objects.filter(user=userdata, type=type1.upper()).exists()):
+    #                         UserAddress.objects.filter(user=userdata, type=type1.upper()).update(
+    #                             mobile=mobile, address=address, landmark=nearby,
+    #                             area=streetno, city=city, state=state, 
+    #                             country=country, pincode=pincode, name=name
+    #                         )
+    #                         return Response({"message":"Updated Sucessfully"},status=status.HTTP_200_OK)
+    #                     else:
+    #                         return Response({"message":"User had not address on this address type"}, status=status.HTTP_404_NOT_FOUND)
+    #                 else:
+    #                     data = {"message":'Serializer not valid'}
+    #                     return Response(data, status=status.HTTP_400_BAD_REQUEST)
+    #         else:
+    #             data ={
+    #                 "warning" : "User not assigned to Role",
+    #                 "message" : "Activate your account"
+    #             }
+    #             return Response(data, status=status.HTTP_404_NOT_FOUND)
+    #     else:
+    #         data = {"message":'User is in In-Active, please Activate your account'}
+    #         return Response(data, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+
+    @transaction.atomic
+    def get(self,request,token):
+        try:
+            token1 = KnoxAuthtoken.objects.get(token_key=token)
+        except:
+            data = {"message" : "Invalid Access Token"}
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+        user = token1.user_id
+        usertable = UserProfile.objects.get(id=user)
+        userdata = usertable.id
+        role = Role.objects.get(role='USER')
+        role1 = role.role_id
+        roles = UserRole.objects.filter(role_id=role1,user_id=userdata)
+        if(UserProfile.objects.filter(id=userdata, is_active='True')):
+            if roles.exists():
+                if token1.expiry < datetime.now(utc):
+                    KnoxAuthtoken.objects.filter(user=user).delete()
+                    data = {"message":'Session Expired, Please login again'}
+                    return Response(data, status=status.HTTP_408_REQUEST_TIMEOUT)
+                else:
+                    data = UserAddress.objects.filter(user=userdata)
+                    if data.exists():
+                        data1 = list(data.values())
+                        return Response(data1, status=status.HTTP_200_OK)
+                    else:
+                        data ={
+                            "message" :"No Address associated with current user",
+                            "warning" : "Add Address"
+                        }
+                        return Response(data,status=status.HTTP_204_NO_CONTENT)
+            else:
+                data ={
+                    "warning" : "User not assigned to Role",
+                    "message" : "Activate your account"
+                }
+                return Response(data, status=status.HTTP_404_NOT_FOUND)
+        else:
+            data = {"message":'User is in In-Active, please Activate your account'}
+            return Response(data, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+class UpdateAddressView(APIView):
+    serializer_class = UpdateAddressSerializer
+
+    @transaction.atomic
+    def put(self, request, token,aid):
+        try:
+            token1 = KnoxAuthtoken.objects.get(token_key=token)
+        except:
+            data = {"message" : "Invalid Access Token"}
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+        user = token1.user_id
+        usertable = UserProfile.objects.get(id=user)
+        userdata = usertable.id
+        role = Role.objects.get(role='USER')
+        role1 = role.role_id
+        roles = UserRole.objects.filter(role_id=role1, user_id=userdata)
+        if(UserProfile.objects.filter(id=userdata, is_active='True')):
+            if roles.exists():
+                if token1.expiry < datetime.now(utc):
+                    KnoxAuthtoken.objects.filter(user=user).delete()
+                    data = {"message":"Session Expired, Please login again"}
+                    return Response(data, status=status.HTTP_408_REQUEST_TIMEOUT)
+                else:                 
+                    serializer = UpdateAddressSerializer(usertable,data = request.data)
+                    if serializer.is_valid():
+                        name = serializer.validated_data['name']
+                        type1 = serializer.validated_data['type']
+                        mobile = serializer.validated_data['mobile']
+                        address = serializer.validated_data['address']
+                        nearby = serializer.validated_data['landmark']
+                        streetno = serializer.validated_data['area']
+                        city = serializer.validated_data['city']
+                        state = serializer.validated_data['state']
+                        serializercountry = serializer.validated_data['country']
+                        pincode = serializer.validated_data['pincode']
+                        default = serializer.validated_data['is_default']
+
+                        if(UserAddress.objects.filter(user=userdata,id=aid).exists()):
+                            if(serializercountry=='in' or serializercountry=='India' or serializercountry=='INDIA' or serializercountry=='india' or serializercountry=='IN'):
+                                if default==True:
+                                    UserAddress.objects.filter(user=usertable,is_default=True).update(is_default=False)
+                                    UserAddress.objects.filter(user=userdata, id=aid).update(
+                                        mobile=mobile, address=address, landmark=nearby,type=type1,
+                                        area=streetno, city=city, state=state, 
+                                        country='INDIA',pincode=pincode, name=name, is_default=True
+                                    )
+                                    return Response({"message":"Updated Successfully"},status=status.HTTP_200_OK)
+                                else:
+                                    UserAddress.objects.filter(user=userdata, id=aid).update(
+                                        mobile=mobile, address=address, landmark=nearby,type=type1,
+                                        area=streetno, city=city, state=state, 
+                                        country='INDIA', pincode=pincode, name=name)
+                                    return Response({"message":"Updated Sucessfully"},status=status.HTTP_200_OK)
+                            elif(serializercountry=='US' or serializercountry=='UNITED STATES' or serializercountry=='United States' or serializercountry=='united states' or serializercountry=='us'):
+                                if default==True:
+                                    UserAddress.objects.filter(user=usertable,is_default=True).update(is_default=False)
+                                    UserAddress.objects.filter(user=userdata, id=aid).update(
+                                        mobile=mobile, address=address, landmark=nearby,type=type1,
+                                        area=streetno, city=city, state=state, 
+                                        country='UNITED STATES',pincode=pincode, name=name, is_default=True
+                                    )
+                                    return Response({"message":"Updated Successfully"},status=status.HTTP_200_OK)
+                                else:
+                                    UserAddress.objects.filter(user=userdata, id=aid).update(
+                                        mobile=mobile, address=address, landmark=nearby,type=type1,
+                                        area=streetno, city=city, state=state, 
+                                        country='UNITED STATES', pincode=pincode, name=name)
+                                    return Response({"message":"Updated Sucessfully"},status=status.HTTP_200_OK)
+                            else:
+                                return Response({"message":"Country not allowed to update"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+                        else:
+                            return Response({"message":"Address with id not Found"}, status=status.HTTP_404_NOT_FOUND)
+                    else:
+                        data = {"message":'Serializer not valid'}
+                        return Response(data, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                data ={
+                    "warning" : "User not assigned to Role",
+                    "message" : "Activate your account"
+                }
+                return Response(data, status=status.HTTP_404_NOT_FOUND)
+        else:
+            data = {"message":'User is in In-Active, please Activate your account'}
+            return Response(data, status=status.HTTP_406_NOT_ACCEPTABLE)
+        
+    @transaction.atomic
+    def delete(self, request, token,aid):
+        try:
+            token1 = KnoxAuthtoken.objects.get(token_key=token)
+        except:
+            data = {"message" : "Invalid Access Token"}
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+        user = token1.user_id
+        usertable = UserProfile.objects.get(id=user)
+        userdata = usertable.id
+        role = Role.objects.get(role='USER')
+        role1 = role.role_id
+        roles = UserRole.objects.filter(role_id=role1, user_id=userdata)
+        if(UserProfile.objects.filter(id=userdata, is_active='True')):
+            if roles.exists():
+                if token1.expiry < datetime.now(utc):
+                    KnoxAuthtoken.objects.filter(user=user).delete()
+                    data = {"message":"Session Expired, Please login again"}
+                    return Response(data, status=status.HTTP_408_REQUEST_TIMEOUT)
+                else:                 
+                    if UserAddress.objects.filter(user=usertable,id=aid).exists():
+                        UserAddress.objects.filter(user=usertable,id=aid).delete()
+                        return Response({"message":"Address Deleted Successful"}, status=status.HTTP_200_OK)
+                    else:
+                        return Response({"message":"Address with id not Found"},status=status.HTTP_404_NOT_FOUND)
+            else:
+                data ={
+                    "warning" : "User not assigned to Role",
+                    "message" : "Activate your account"
+                }
+                return Response(data, status=status.HTTP_404_NOT_FOUND)
+        else:
+            data = {"message":'User is in In-Active, please Activate your account'}
+            return Response(data, status=status.HTTP_406_NOT_ACCEPTABLE)
+
 

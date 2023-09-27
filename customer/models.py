@@ -74,3 +74,30 @@ class Reset_Password(models.Model):
     created_at = models.DateTimeField(default=datetime.datetime.now())
     class Meta:
         db_table = 'reset_password'
+
+class AddressType(models.Model):
+    type = models.CharField(primary_key=True, max_length=50)
+    description = models.CharField(max_length=250, blank=True, null=True)
+
+    class Meta:
+        db_table = 'address_type'
+
+
+class UserAddress(models.Model):
+    type = models.ForeignKey(AddressType, models.CASCADE, db_column='address_type', blank=True, null=True)  
+     # type = models.CharField(max_length=200, db_column='address_type', null=True, blank=True)
+    user = models.ForeignKey(UserProfile, models.CASCADE, blank=True, null=True, db_column='user_id')
+    name = models.CharField(max_length=200, blank=True, null=True)
+    mobile = models.PositiveBigIntegerField(blank=True, null=True)
+    address = models.CharField(db_column='house_no/plot_no', max_length=500, blank=True, null=True)
+    landmark = models.CharField(max_length=100, blank=True, null=True)
+    area = models.CharField(max_length=100, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    state = models.CharField(max_length=100, blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    pincode = models.IntegerField(blank=True, null=True,db_column='pincode')
+    is_default = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'user_address'

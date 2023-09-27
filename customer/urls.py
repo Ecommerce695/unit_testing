@@ -1,7 +1,7 @@
 from django.urls import path
 from customer.views import( RegisterView,AccountActivateView,LoginApiView,ResendActivationView,UserRoleDetailsView,AccountDeactivateView,
-                           NamesUpdateAPI,CustomerEmailView,CustomerEmailUpdateView,CustomerMobileView,UsernameUpdateAPI,UpdatePasswordAPI,ForgotPasswordView,ConfirmPasswordView
-                           )
+                           NamesUpdateAPI,CustomerEmailView,CustomerEmailUpdateView,CustomerMobileView,UsernameUpdateAPI,UpdatePasswordAPI,ForgotPasswordView,ConfirmPasswordView,
+                           AddressView,UpdateAddressView)
 from customer import views
 
 urlpatterns = [
@@ -33,5 +33,10 @@ urlpatterns = [
     # Reset / Forget Password API
     path('reset_password/', ForgotPasswordView.as_view(), name='Reset Password'),
     path('reset_password/confirm/Token=<token>', ConfirmPasswordView.as_view(), name='Reset Password Confirm'),
+    
+    # Addess API(post, get)
+    path('useraddress/<token>',AddressView.as_view(), name='useraddress'),
+    # Update and Delete Address
+    path('updateaddress/<token>/<int:aid>',UpdateAddressView.as_view(), name='Update Address'),
 
     ]
