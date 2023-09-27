@@ -150,7 +150,7 @@ class test_details_updation(TestCase):
         reset_passwords_data = {"password" : "Dharani@2001","confirmPassword" : "Dharadadaani@2001"}
         reset_confirm_url = self.client.put(f'/reset_password/confirm/Token={reset_key}',reset_passwords_data,content_type="application/json")
         bytes_data1 = json.loads(reset_confirm_url.content.decode('utf-8'))
-        self.assertEqual(bytes_data1.get('message'),"[Password Fields didn\'t Match]")
+        self.assertEqual(bytes_data1.get('message'),["Password Fields didn\'t Match"])
         self.assertEqual(reset_confirm_url.status_code,400)
 
     
