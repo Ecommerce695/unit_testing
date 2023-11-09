@@ -56,6 +56,9 @@ class test_details_updation(TestCase):
         token =content_data.get('accessToken')
         self.data123 = KnoxAuthtoken.objects.filter(user_id=1).first()
         self.token_key = self.data123.token_key
+
+
+
     def test_name_updation(self):
         names_data = {
             "first_name" : "kumar",
@@ -149,6 +152,7 @@ class test_details_updation(TestCase):
         reset_bytes_data = json.loads(reset_confirm_url.content.decode('utf-8'))
         self.assertEqual(reset_bytes_data.get('message'),'Password changed Successfully, Please Login')
     
+
     def test_reset_password_invalid_format(self):
         reset_acc_email = {"email" : "beeladharanikumakiujuiir@gmail.com"}
         reset_url = self.client.post('/reset_password/',reset_acc_email,content_type="application/json")
